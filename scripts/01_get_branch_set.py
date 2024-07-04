@@ -33,32 +33,28 @@ for leaf in t.iter_leaves():
     if leaf.clade == 'Eukaryota':
         euk_leaves.append(leaf.name)
 
-
-euk_anc = t.get_common_ancestor(euk_leaves)
-euk_ancestors = euk_anc.iter_ancestors ()
-
-ancs = []
-for anc in euk_ancestors:
-    ancs.append(anc)
-
-laeca_age = ancs[0].get_distance(euk_leaves[0])
-euk_stem_length = euk_anc.dist
-leca_age = laeca_age - euk_stem_length
+leca = t.get_common_ancestor(euk_leaves)
+leca_age = leca.get_distance(leca.get_leaf_names()[0])
+laeca_age = leca_age + leca.dist
 
 ofile = open('../outputs/node_ages_phylum.tsv', 'w')
 ofile.write('\t'.join(['node', 'birth', 'death', 'length', 'clades', 'phylums', 'class']) + '\n')
-ofile.write('\t'.join(['FECA-LECA', str(laeca_age), str(leca_age), str(euk_stem_length), 'Eukaryota', 'Eukaryota', 'Eukaryota']) + '\n')
+ofile.write('\t'.join(['FECA-LECA', str(laeca_age), str(leca_age), str(leca.dist), 'Eukaryota', 'Eukaryota', 'Eukaryota']) + '\n')
 
 i = 0
 for node in t.traverse():
     if not node.is_leaf():
-        birth = node.get_distance(node.get_leaf_names()[0])
+        death = node.get_distance(node.get_leaf_names()[0])
         length = node.dist
-        death = birth - length
+        birth = death + length
 
         clades = ';'.join(set([x.clade for x in node.get_leaves()]))
         phylum = ';'.join(set([x.phylum for x in node.get_leaves()]))
         classes = ';'.join(set([x.classes for x in node.get_leaves()]))
+
+        if birth >= leca_age and death <= laeca_age and clades == 'Bacteria':
+            node.add_feature('name', 'brspace')
+            node.add_feature('brspnum', i)
 
         ofile.write('\t'.join([str(i), str(birth), str(death), str(length), str(clades), phylum, classes]) + '\n')
     else:
@@ -70,6 +66,8 @@ for node in t.traverse():
         classes = ';'.join(set([x.classes for x in node.get_leaves()]))
 
         ofile.write('\t'.join([str(i), str(birth), '0', str(length), str(clades), phylum, classes]) + '\n')
-    
+
     i += 1
 ofile.close()
+
+t.write(features=['name', 'brspnum'], outfile='../outputs/annotated_tree.nwk')

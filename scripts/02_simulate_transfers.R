@@ -31,8 +31,8 @@ ptr <- function(branch_space, sim_res = NULL, sim_res_2 = NULL, iter = NULL) {
   
   p <- ggplot(branch_space) +
     geom_segment(aes(x = -birth, xend = -death,
-                     y = reorder(1:length(branch_space$node), birth),
-                     yend = reorder(1:length(branch_space$node), birth))) +
+                     y = reorder(branch_space$node, birth),
+                     yend = reorder(branch_space$node, birth))) +
     geom_vline(xintercept = c(-feca, -leca),
                lty = 4, colour = 'steelblue') +
     xlab('Time (Mya)') +
@@ -148,6 +148,8 @@ leca <- brs[which(brs$node == 'FECA-LECA'), 'death']
 
 # Filtering donor branches
 brs <- brs[which(brs$birth >= leca & brs$death <= feca & brs$clades == 'Bacteria'), ]
+
+# ptr(brs)
 
 shiftl <- c()
 tm0 <- Sys.time()

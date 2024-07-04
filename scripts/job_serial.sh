@@ -1,14 +1,15 @@
 #!/bin/bash
-#SBATCH --job-name=donors
-#SBATCH --output=donors_%j.out
-#SBATCH --error=donors_%j.err
+#SBATCH --job-name=ghosts
+#SBATCH --qos=gp_bscls
+#SBATCH --account=bsc40
+
+#SBATCH --output=../joberrout/%x_%j.out
+#SBATCH --error=../joberrout/%x_%j.err
 
 #SBATCH --ntasks=1
-#SBATCH --qos=bsc_ls
 #SBATCH --time=2-00:00:00
 
-module load gcc pcre2 R/4.3.0
-module load python/3.6.1
+module load R
 
 mkdir ../outputs
 Rscript 00_parse_tree.R
