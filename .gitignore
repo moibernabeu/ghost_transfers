@@ -6,5 +6,6 @@ outputs
 figshare
 deprecated
 ghosts_response/
-outputs_v1
+outputs*
 joberrout
+job_serial_*

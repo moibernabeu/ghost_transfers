@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 '''
-Copyright Moisès Bernabeu, Saioa Manzano-Morales & Toni Gabaldón <saioa.manzano@bsc.es>
+Copyright Moisès Bernabeu, Saioa Manzano-Morales & Toni Gabaldón <moises.bernabeu.sci@gmail.com>
 
 This file is free software: you may copy, redistribute and/or modify it  
 under the terms of the GNU General Public License as published by the  

@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-#  Copyright Moisès Bernabeu, Saioa Manzano-Morales & Toni Gabaldón <saioa.manzano@bsc.es>
+#  Copyright Moisès Bernabeu, Saioa Manzano-Morales & Toni Gabaldón <moises.bernabeu.sci@gmail.com>
 #  
 #  This file is free software: you may copy, redistribute and/or modify it  
 #  under the terms of the GNU General Public License as published by the  
@@ -17,10 +17,13 @@
 library(ggplot2)
 library(tidyr)
 library(ggpubr)
+library(stringr)
+library(foreach)
+library(doParallel)
 
 theme_set(theme_bw())
 
-ptr <- function(branch_space, sim_res = NULL, sim_res_2 = NULL, iter = NULL) {
+ptr <- function(branch_space, sim_res = NULL, sim_res_2 = NULL, iter = NULL, segment_colour = 'black') {
   if (!is.null(sim_res_2)) {
     if (!is.null(iter)) {
       sim_res <- rbind(sim_res[iter, ], sim_res_2[iter, ])
@@ -29,10 +32,15 @@ ptr <- function(branch_space, sim_res = NULL, sim_res_2 = NULL, iter = NULL) {
     }
   }
   
+  feca <- branch_space[which(branch_space$node == 'FECA-LECA'), 'birth']
+  leca <- branch_space[which(branch_space$node == 'FECA-LECA'), 'death']
+  
+  branch_space <- branch_space[-1, ]
+  
   p <- ggplot(branch_space) +
     geom_segment(aes(x = -birth, xend = -death,
                      y = reorder(branch_space$node, birth),
-                     yend = reorder(branch_space$node, birth))) +
+                     yend = reorder(branch_space$node, birth)), colour = segment_colour) +
     geom_vline(xintercept = c(-feca, -leca),
                lty = 4, colour = 'steelblue') +
     xlab('Time (Mya)') +
@@ -65,7 +73,7 @@ ghost_transfer <- function(branch_space, feca, leca) {
   } else if (birth >= feca & death >= leca) {
     # If the branch was born before FECA and died before LECA
     ghost_birth <- runif(1, death, birth)
-    if (ghost_birth >= feca) {
+    if (ghost_birth > feca) {
       transfer <- runif(1, leca, feca)
     } else {
       transfer <- runif(1, leca, ghost_birth)
@@ -76,10 +84,14 @@ ghost_transfer <- function(branch_space, feca, leca) {
     ghost_birth <- runif(1, leca, birth)
     transfer <- runif(1, leca, ghost_birth)
     ghost_death <- runif(1, 0, transfer)
-  } else {
-    # If the branch was born after FECA and died after LECA
+  } else if (birth >= feca & death <= leca) {
+    # If the branch was born before FECA and died after LECA
     ghost_birth <- runif(1, leca, birth)
-    transfer <- runif(1, leca, feca)
+    if (ghost_birth > feca) {
+      transfer <- runif(1, leca, feca)
+    } else {
+      transfer <- runif(1, leca, ghost_birth)
+    }
     ghost_death <- runif(1, 0, transfer)
   }
 
@@ -147,15 +159,12 @@ feca <- brs[which(brs$node == 'FECA-LECA'), 'birth']
 leca <- brs[which(brs$node == 'FECA-LECA'), 'death']
 
 # Filtering donor branches
-brs <- brs[which(brs$birth >= leca & brs$death <= feca & brs$clades == 'Bacteria'), ]
+brs <- brs[which(brs$birth >= leca & brs$death <= feca & !str_detect(brs$clades, 'Eukaryota')), ]
 
-# ptr(brs)
-
-shiftl <- c()
+registerDoParallel(112)
 tm0 <- Sys.time()
-for (i in 1:10000) {
-  shiftl[[i]] <- get_shifts(ghost_simulator(brs, feca, leca, 1000), ghost_simulator(brs, feca, leca, 1000), feca)
-  print(i)
+shiftl <- foreach (i = 1:10000) %dopar% {
+  get_shifts(ghost_simulator(brs, feca, leca, 1000), ghost_simulator(brs, feca, leca, 1000), feca)
 }
 tm1 <- Sys.time()
 tm1 - tm0
