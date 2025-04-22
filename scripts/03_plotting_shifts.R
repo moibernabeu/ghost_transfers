@@ -48,3 +48,19 @@ dev.off()
 
 write.table(do.call(rbind, by(shift$value, shift$key, summary)),
             file = '../outputs/shift_summary.csv', sep = '\t')
+
+load('../outputs/shift_list_ghosts_prop.RData')
+shift <- data.frame(do.call(rbind, lapply(shiftl, function(x) {c(x$shift_summary, ghost_prop = x$ghosts_prop)})), check.names = FALSE) %>%
+  pivot_longer(cols = c('No shift', 'Shift'))
+
+ghosts_props_plot <- ggplot(shift, aes(x = as.factor(ghost_prop), y = value, colour = name, fill = name)) +
+  geom_violin(alpha = 0.6, position = position_dodge(width = 1), draw_quantiles = c(0.5)) +
+  # geom_boxplot(width = 0.2, alpha = 0, position = position_dodge(width = 1)) +
+  # theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ylab('Proportion') +
+  xlab('Proportion of ghosts') +
+  ylim(0, 100)
+
+pdf('../outputs/shifts_proportion_ghosts.pdf', width = 6.75, height = 3)
+ghosts_props_plot
+dev.off()
